@@ -43,17 +43,18 @@ func TestDeployService(t *testing.T) {
 		k8sOpts := k8s.KubectlOptions{}
 		listServices, err := k8s.RunKubectlAndGetOutputE(t, &k8sOpts, "get", "svc", "terraform-example", "-o", "json")
 		assert.NoError(err)
-		kubeService := utils.ParseJSONResult(t, listServices)
+		kubeService := utils.ParseKubectlJSONResult(t, listServices)
 		serviceIp := kubeService.Get("status.loadBalancer.ingress").Array()[0].Get("ip")
 		serviceUrl := fmt.Sprintf("http://%s:8080", serviceIp)
 
 		pollHTTPEndPoint := func(cmd string) func() (bool, error) {
 			return func() (bool, error) {
 				_, err := http.Get(cmd)
-				if assert.NoError(err) {
-					return false, nil
+				if err != nil {
+					t.Logf("%s", err)
+					return true, err
 				}
-				return true, nil
+				return false, nil
 			}
 		}
 

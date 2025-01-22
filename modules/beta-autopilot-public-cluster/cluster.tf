@@ -72,6 +72,21 @@ resource "google_container_cluster" "primary" {
 
   min_master_version = var.release_channel == null || var.release_channel == "UNSPECIFIED" ? local.master_version : var.kubernetes_version == "latest" ? null : var.kubernetes_version
 
+  dynamic "logging_config" {
+    for_each = length(var.logging_enabled_components) > 0 ? [1] : []
+
+    content {
+      enable_components = var.logging_enabled_components
+    }
+  }
+
+  dynamic "monitoring_config" {
+    for_each = length(var.monitoring_enabled_components) > 0 ? [1] : []
+    content {
+      enable_components = var.monitoring_enabled_components
+    }
+  }
+
   cluster_autoscaling {
     dynamic "auto_provisioning_defaults" {
       for_each = (var.create_service_account || var.service_account != "") ? [1] : []
@@ -84,13 +99,33 @@ resource "google_container_cluster" "primary" {
   vertical_pod_autoscaling {
     enabled = var.enable_vertical_pod_autoscaling
   }
+
+  dynamic "binary_authorization" {
+    for_each = var.enable_binary_authorization ? [var.enable_binary_authorization] : []
+    content {
+      evaluation_mode = "PROJECT_SINGLETON_POLICY_ENFORCE"
+    }
+  }
+
+  enable_l4_ilb_subsetting = var.enable_l4_ilb_subsetting
+
+  enable_cilium_clusterwide_network_policy = var.enable_cilium_clusterwide_network_policy
+
+  dynamic "secret_manager_config" {
+    for_each = var.enable_secret_manager_addon ? [var.enable_secret_manager_addon] : []
+    content {
+      enabled = secret_manager_config.value
+    }
+  }
+
   enable_fqdn_network_policy = var.enable_fqdn_network_policy
   enable_autopilot           = true
   dynamic "master_authorized_networks_config" {
-    for_each = local.master_authorized_networks_config
+    for_each = var.gcp_public_cidrs_access_enabled != null || length(var.master_authorized_networks) > 0 ? [true] : []
     content {
+      gcp_public_cidrs_access_enabled = var.gcp_public_cidrs_access_enabled
       dynamic "cidr_blocks" {
-        for_each = master_authorized_networks_config.value.cidr_blocks
+        for_each = var.master_authorized_networks
         content {
           cidr_block   = lookup(cidr_blocks.value, "cidr_block", "")
           display_name = lookup(cidr_blocks.value, "display_name", "")
@@ -99,13 +134,14 @@ resource "google_container_cluster" "primary" {
     }
   }
   dynamic "node_pool_auto_config" {
-    for_each = length(var.network_tags) > 0 ? [1] : []
+    for_each = length(var.network_tags) > 0 || var.add_cluster_firewall_rules || var.add_master_webhook_firewall_rules || var.add_shadow_firewall_rules ? [1] : []
     content {
       network_tags {
-        tags = var.network_tags
+        tags = var.add_cluster_firewall_rules || var.add_master_webhook_firewall_rules || var.add_shadow_firewall_rules ? concat(var.network_tags, [local.cluster_network_tag]) : var.network_tags
       }
     }
   }
+
 
   master_auth {
     client_certificate_config {
@@ -129,6 +165,43 @@ resource "google_container_cluster" "primary" {
       disabled = !var.horizontal_pod_autoscaling
     }
 
+    gcp_filestore_csi_driver_config {
+      enabled = var.filestore_csi_driver
+    }
+
+
+    dynamic "gke_backup_agent_config" {
+      for_each = local.gke_backup_agent_config
+
+      content {
+        enabled = gke_backup_agent_config.value.enabled
+      }
+    }
+
+    dynamic "stateful_ha_config" {
+      for_each = local.stateful_ha_config
+
+      content {
+        enabled = stateful_ha_config.value.enabled
+      }
+    }
+
+    dynamic "ray_operator_config" {
+      for_each = local.ray_operator_config
+
+      content {
+
+        enabled = ray_operator_config.value.enabled
+
+        ray_cluster_logging_config {
+          enabled = ray_operator_config.value.logging_enabled
+        }
+        ray_cluster_monitoring_config {
+          enabled = ray_operator_config.value.monitoring_enabled
+        }
+      }
+    }
+
   }
 
   allow_net_admin = var.allow_net_admin
@@ -145,6 +218,13 @@ resource "google_container_cluster" "primary" {
   security_posture_config {
     mode               = var.security_posture_mode
     vulnerability_mode = var.security_posture_vulnerability_mode
+  }
+
+  dynamic "fleet" {
+    for_each = var.fleet_project != null ? [1] : []
+    content {
+      project = var.fleet_project
+    }
   }
 
   ip_allocation_policy {
@@ -227,6 +307,13 @@ resource "google_container_cluster" "primary" {
     }
   }
 
+  dynamic "workload_identity_config" {
+    for_each = local.cluster_workload_identity_config
+
+    content {
+      workload_pool = workload_identity_config.value.workload_pool
+    }
+  }
 
 
   dynamic "authenticator_groups_config" {
@@ -240,6 +327,27 @@ resource "google_container_cluster" "primary" {
     pubsub {
       enabled = var.notification_config_topic != "" ? true : false
       topic   = var.notification_config_topic
+
+      dynamic "filter" {
+        for_each = length(var.notification_filter_event_type) > 0 ? [1] : []
+        content {
+          event_type = var.notification_filter_event_type
+        }
+      }
     }
   }
+
+  node_pool_defaults {
+    node_config_defaults {
+      logging_variant = var.logging_variant
+      dynamic "gcfs_config" {
+        for_each = var.enable_gcfs != null ? [true] : []
+        content {
+          enabled = var.enable_gcfs
+        }
+      }
+    }
+  }
+
+  depends_on = [google_project_iam_member.service_agent]
 }

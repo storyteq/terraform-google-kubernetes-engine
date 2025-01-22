@@ -25,6 +25,7 @@
     "currentNodeCount": 3,
     "currentNodeVersion": "1.25.4-gke.2100",
     "databaseEncryption": {
+      "currentState": "CURRENT_STATE_DECRYPTED",
       "state": "DECRYPTED"
     },
     "defaultMaxPodsConstraint": {
@@ -240,6 +241,9 @@
       "peeringName": "gke-n1295bf45f3d8b003b5f-0162-9128-peer",
       "privateEndpoint": "172.16.0.2",
       "publicEndpoint": "104.198.172.159"
+    },
+    "secretManagerConfig": {
+      "enabled": true
     },
     "selfLink": "https://container.googleapis.com/v1/projects/PROJECT_ID/locations/us-central1/clusters/CLUSTER_NAME",
     "servicesIpv4Cidr": "192.168.64.0/18",

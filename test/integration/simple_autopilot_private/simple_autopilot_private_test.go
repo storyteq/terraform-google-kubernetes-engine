@@ -30,8 +30,7 @@ func TestSimpleAutopilotPrivate(t *testing.T) {
 	)
 
 	bpt.DefineVerify(func(assert *assert.Assertions) {
-		//Skipping Default Verify as the Verify Stage fails due to change in Client Cert Token
-		// bpt.DefaultVerify(assert)
+		bpt.DefaultVerify(assert)
 
 		projectId := bpt.GetStringOutput("project_id")
 		location := bpt.GetStringOutput("location")
@@ -53,6 +52,7 @@ func TestSimpleAutopilotPrivate(t *testing.T) {
 			"addonsConfig.httpLoadBalancing",
 			"addonsConfig.kubernetesDashboard.disabled",
 			"addonsConfig.networkPolicyConfig.disabled",
+			"masterAuthorizedNetworksConfig.enabled",
 		}
 		for _, pth := range validateJSONPaths {
 			g.JSONEq(assert, op, pth)

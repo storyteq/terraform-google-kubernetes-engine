@@ -16,24 +16,24 @@
  */
 
 terraform {
-  required_version = ">= 0.13.0"
+  required_version = ">= 1.3"
 
   provider_meta "google" {
-    module_name = "blueprints/terraform/terraform-google-kubernetes-engine:acm/v30.0.0"
+    module_name = "blueprints/terraform/terraform-google-kubernetes-engine:acm/v35.0.1"
   }
 
   provider_meta "google-beta" {
-    module_name = "blueprints/terraform/terraform-google-kubernetes-engine:acm/v30.0.0"
+    module_name = "blueprints/terraform/terraform-google-kubernetes-engine:acm/v35.0.1"
   }
 
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 4.32.0, < 6"
+      version = ">= 5.41.0, < 7"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = ">= 4.32.0, < 6"
+      version = ">= 5.41.0, < 7"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"

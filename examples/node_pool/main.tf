@@ -28,7 +28,7 @@ provider "kubernetes" {
 
 module "gke" {
   source  = "terraform-google-modules/kubernetes-engine/google//modules/beta-public-cluster"
-  version = "~> 30.0"
+  version = "~> 35.0"
 
   project_id                        = var.project_id
   name                              = "${local.cluster_type}-cluster${var.cluster_name_suffix}"
@@ -43,6 +43,7 @@ module "gke" {
   disable_legacy_metadata_endpoints = false
   cluster_autoscaling               = var.cluster_autoscaling
   deletion_protection               = false
+  service_account                   = "default"
 
   node_pools = [
     {
@@ -51,6 +52,7 @@ module "gke" {
       max_count       = 2
       service_account = var.compute_engine_service_account
       auto_upgrade    = true
+      enable_gcfs     = false
     },
     {
       name              = "pool-02"
@@ -66,18 +68,33 @@ module "gke" {
       service_account   = var.compute_engine_service_account
     },
     {
-      name               = "pool-03"
-      machine_type       = "n1-standard-2"
-      node_locations     = "${var.region}-b,${var.region}-c"
-      autoscaling        = false
-      node_count         = 2
-      disk_type          = "pd-standard"
-      auto_upgrade       = true
-      service_account    = var.compute_engine_service_account
-      pod_range          = "test"
-      sandbox_enabled    = true
-      cpu_manager_policy = "static"
-      cpu_cfs_quota      = true
+      name                                   = "pool-03"
+      machine_type                           = "n1-standard-2"
+      node_locations                         = "${var.region}-b,${var.region}-c"
+      autoscaling                            = false
+      node_count                             = 2
+      disk_type                              = "pd-standard"
+      auto_upgrade                           = true
+      service_account                        = var.compute_engine_service_account
+      pod_range                              = "test"
+      sandbox_enabled                        = true
+      cpu_manager_policy                     = "static"
+      cpu_cfs_quota                          = true
+      insecure_kubelet_readonly_port_enabled = false
+      local_ssd_ephemeral_count              = 2
+      pod_pids_limit                         = 4096
+    },
+    {
+      name                = "pool-04"
+      min_count           = 0
+      service_account     = var.compute_engine_service_account
+      queued_provisioning = true
+    },
+    {
+      name                         = "pool-05"
+      machine_type                 = "n1-standard-2"
+      node_count                   = 1
+      enable_nested_virtualization = true
     },
   ]
 
@@ -132,5 +149,10 @@ module "gke" {
     pool-03 = {
       "net.core.netdev_max_backlog" = "20000"
     }
+  }
+
+  node_pools_cgroup_mode = {
+    all     = "CGROUP_MODE_V1"
+    pool-01 = "CGROUP_MODE_V2"
   }
 }

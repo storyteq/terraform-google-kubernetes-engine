@@ -34,6 +34,8 @@ locals {
     "roles/iam.roleAdmin",
     "roles/iap.admin",
     "roles/gkehub.admin",
+    "roles/cloudasset.viewer",
+    "roles/serviceusage.serviceUsageConsumer"
   ]
 
   # roles as documented https://cloud.google.com/service-mesh/docs/installation-permissions
@@ -100,6 +102,14 @@ resource "google_project_iam_member" "int_test_asm" {
   for_each = toset(concat(local.int_required_roles, local.int_asm_required_roles))
 
   project = module.gke-project-asm.project_id
+  role    = each.value
+  member  = "serviceAccount:${google_service_account.int_test.email}"
+}
+
+resource "google_project_iam_member" "int_test_fleet" {
+  for_each = toset(local.int_required_roles)
+
+  project = module.gke-project-fleet.project_id
   role    = each.value
   member  = "serviceAccount:${google_service_account.int_test.email}"
 }

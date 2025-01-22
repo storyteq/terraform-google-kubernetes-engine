@@ -21,7 +21,7 @@ locals {
 
 module "bastion" {
   source  = "terraform-google-modules/bastion-host/google"
-  version = "~> 6.0"
+  version = "~> 8.0"
 
   network        = module.vpc.network_self_link
   subnet         = module.vpc.subnets_self_links[0]
@@ -34,4 +34,6 @@ module "bastion" {
   startup_script = templatefile("${path.module}/templates/startup-script.tftpl", {})
   members        = var.bastion_members
   shielded_vm    = "false"
+
+  service_account_roles = ["roles/container.viewer"]
 }

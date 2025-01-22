@@ -78,12 +78,8 @@ func TestSimpleZonal(t *testing.T) {
 		k8sOpts := k8s.KubectlOptions{}
 		configNameSpace, err := k8s.RunKubectlAndGetOutputE(t, &k8sOpts, "get", "ns", "config-management-system", "-o", "json")
 		assert.NoError(err)
-		configkubeNS := utils.ParseJSONResult(t, configNameSpace)
+		configkubeNS := utils.ParseKubectlJSONResult(t, configNameSpace)
 		assert.Contains(configkubeNS.Get("metadata.name").String(), "config-management-system", "Namespace is Functional")
-		gateKeeperNameSpace, err := k8s.RunKubectlAndGetOutputE(t, &k8sOpts, "get", "ns", "gatekeeper-system", "-o", "json")
-		assert.NoError(err)
-		gateKeeperkubeNS := utils.ParseJSONResult(t, gateKeeperNameSpace)
-		assert.Contains(gateKeeperkubeNS.Get("metadata.name").String(), "gatekeeper-system", "Namespace is Functional")
 	})
 
 	bpt.Test()

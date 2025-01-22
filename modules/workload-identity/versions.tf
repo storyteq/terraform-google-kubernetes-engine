@@ -16,12 +16,12 @@
  */
 
 terraform {
-  required_version = ">= 0.13.0"
+  required_version = ">= 1.3"
 
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 3.39.0, < 6"
+      version = ">= 5.12.0, < 7"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -30,6 +30,6 @@ terraform {
   }
 
   provider_meta "google" {
-    module_name = "blueprints/terraform/terraform-google-kubernetes-engine:workload-identity/v30.0.0"
+    module_name = "blueprints/terraform/terraform-google-kubernetes-engine:workload-identity/v35.0.1"
   }
 }
